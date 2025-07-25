@@ -1,0 +1,5 @@
+# Create deployment scripts
+echo -e "#!/bin/bash\nyum install -y httpd" > scripts/httpd_install.sh
+echo -e "#!/bin/bash\nsystemctl start httpd\nsystemctl enable httpd" > scripts/httpd_start.sh
+echo -e "#!/bin/bash\nsystemctl stop httpd\nsystemctl disable httpd" > scripts/httpd_stop.sh
+chmod 755 scripts/*

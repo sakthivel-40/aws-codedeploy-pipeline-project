@@ -1,0 +1,128 @@
+
+Title: 🚀 My AWS CodeDeploy + CodePipeline EC2 Project Journey
+
+---
+
+## 🛠️ Project Overview
+
+I created a full-stack deployment pipeline using AWS services:
+- EC2 (Dev and Test)
+- S3 (for storing zipped app code)
+- CodeDeploy (for deployment automation)
+- CodePipeline (for CI/CD automation)
+
+This blog documents my journey step-by-step, including setup, common errors, and how I fixed them.
+
+---
+
+## 🔧 Step-by-Step Setup
+
+### Phase 1: EC2 & IAM Setup
+
+- Launched two EC2 instances: `Dev` and `Test`
+- Created IAM roles:
+  - `s3-ec2-full` (attached to both) with `AmazonS3FullAccess`, `AWSCodeDeployRole`, `AmazonSSMManagedInstanceCore`
+
+### Phase 2: Application Code
+
+Created a simple static app:
+
+```
+index.html:
+<html><h2>Sample App Version 1</h2></html>
+```
+
+- Wrote 3 scripts:
+  - `httpd_install.sh`: installs Apache
+  - `httpd_start.sh`: starts Apache
+  - `httpd_stop.sh`: stops Apache
+
+- Created `appspec.yml` to configure CodeDeploy
+
+### Phase 3: Packaging and Uploading to S3
+
+- Zipped the app:
+  ```
+  zip -r sampleapp.zip sampleapp/
+  ```
+
+- Faced error: ❌ `Unable to locate credentials`
+  - ✅ Fixed by attaching IAM role with S3 access
+
+- Faced error: ❌ `BucketAlreadyExists`
+  - ✅ Fixed by using unique bucket: `gir-sampleapp-sakthi-20250723`
+
+### Phase 4: CodeDeploy Setup
+
+- Created Application: `sampleapp`
+- Created Deployment Group: `mygrp` using tag `AppName=SampleApp`
+- Tagged Test EC2 accordingly
+
+- Faced error: ❌ `No instances found for deployment group`
+  - ✅ Fixed by adding the correct tag to EC2
+
+- Faced issue: `CodeDeploy agent not installed`
+  - ✅ Installed manually using shell script:
+    ```
+    wget https://aws-codedeploy-region.s3.amazonaws.com/latest/install
+    sudo ./install auto
+    ```
+
+- Deployment succeeded!
+- Visited public IP of Test EC2 → saw `Sample App Version 1`
+
+### Phase 5: Automating with CodePipeline
+
+- Chose "Build custom pipeline" (NOT ECR/ECS templates)
+- Source: Amazon S3 → `sampleapp.zip`
+- Deploy: AWS CodeDeploy → `sampleapp` / `mygrp`
+- Skipped build stage
+- Pipeline created successfully!
+
+- Faced confusion: ❓ No “Amazon S3 versioning” option
+  - ✅ S3 versioning was enabled, so CodePipeline detected changes automatically
+
+### Phase 6: Version 2 Test
+
+- Modified `index.html` → `Sample App Version 2`
+- Re-zipped and uploaded to S3
+- CodePipeline triggered automatically
+- Visited public IP → saw `Version 2` 🎉
+
+---
+
+## 🐛 Issues I Faced and Fixes
+
+| Issue | Fix |
+|------|-----|
+| `aws: command not found` | Installed AWS CLI |
+| `Unable to locate credentials` | Attached IAM role |
+| `BucketAlreadyExists` | Used a unique bucket name |
+| `sampleapp.zip does not exist` | Checked path and zipped again |
+| `CodeDeploy: No instances found` | Tagged EC2 instance properly |
+| `Agent not installed` | Installed CodeDeploy agent manually |
+| `Site can’t be reached` | Opened port 80 in EC2 Security Group |
+| CodePipeline didn’t auto trigger | Enabled S3 versioning, used same object key |
+
+---
+
+## 📘 Final Tips
+
+- Always tag EC2s correctly if you're using CodeDeploy with tags
+- Use unique names for S3 buckets (they’re globally shared)
+- Enable versioning in S3 for CodePipeline to detect changes
+- Always validate your appspec.yml and scripts before deployment
+- Use a proper README and push this to GitHub to show your project
+
+---
+
+## ✅ Project Outcome
+
+- Fully working CI/CD pipeline using AWS tools
+- Production-style setup with Dev and Test EC2s
+- Automated deployments using CodePipeline and CodeDeploy
+- Version updates reflected instantly with no manual work
+
+---
+
+# Done 🎉

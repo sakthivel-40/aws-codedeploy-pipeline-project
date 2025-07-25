@@ -1,0 +1,3 @@
+# Zip the application
+cd /root/deploy_dir/sampleapp
+zip -r ../sampleapp.zip .
